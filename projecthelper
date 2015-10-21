@@ -12,6 +12,35 @@ function testing()
 echo "test"
 }
 
+function upload_force()
+{
+if [ -n `echo $SERVICE_DIR | grep $PROJECT_DIR` ]; then
+    echo "project name is matched"
+else
+    echo "project name is not matched"
+    exit 0;
+fi
+
+if [ -z "$1" ]; then
+    exit 0
+fi
+
+CURRENT_PATH=`pwd`
+filepath=$CURRENT_PATH/$1
+DISCREPANCY_PATH=`echo $filepath | sed -n "s/^.*$PROJECT_DIR\(.*\)/\1/p"`
+/usr/bin/expect<<-EOF
+set time 1
+spawn scp -r $filepath $SERVICE_USER@$SERVICE_IP:$SERVICE_DIR/$DISCREPANCY_PATH
+expect {
+"*yes/no" { send "yes\r"; exp_continue }
+"*password:" { send "$SERVICE_PASSWORD\r" }
+}
+interact
+expect eof
+EOF
+echo "Done"
+}
+
 function upload_modify()
 {
 if [ -n `echo $SERVICE_DIR | grep $PROJECT_DIR` ]; then
@@ -28,7 +57,7 @@ do
 filepath=$CURRENT_PATH/$filename
 DISCREPANCY_PATH=`echo $filepath | sed -n "s/^.*$PROJECT_DIR\(.*\)/\1/p"`
 /usr/bin/expect<<-EOF
-set time 30
+set time 1
 spawn scp -r $filepath $SERVICE_USER@$SERVICE_IP:$SERVICE_DIR/$DISCREPANCY_PATH
 expect {
 "*yes/no" { send "yes\r"; exp_continue }
@@ -57,9 +86,11 @@ ctags -R
 echo "cscope done"
 }
 
-if [ "$1" = "-upload" ]; then
+if [ "$1" = "-u" ]; then
     upload_modify
-elif [ "$1" = "-tag" ]; then
+elif [ "$1" = "-f" ]; then
+    upload_force $2
+elif [ "$1" = "-t" ]; then
     updatetags
 elif [ "$1" = "-test" ]; then
     testing
