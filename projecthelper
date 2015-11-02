@@ -1,10 +1,8 @@
 #!/bin/sh
-SERVICE_DIR=/home/linux3/jrd/cyan/M9635AAATWNLZD2033.1
 SERVICE_IP=10.128.178.56
 SERVICE_USER=linux3
-SERVICE_PASSWORD=1234567
-SVN_PATH=svn://10.128.161.92/datacard/QCT_MDM9x15/branches/M9615ACETWMLZD3033
 
+SERVICE_DIR=/home/linux3/jrd/cyan/M9635AAATWNLZD2033.1
 PROJECT_DIR=M9635AAATWNLZD2033.1
 
 function testing()
@@ -28,16 +26,9 @@ fi
 CURRENT_PATH=`pwd`
 filepath=$CURRENT_PATH/$1
 DISCREPANCY_PATH=`echo $filepath | sed -n "s/^.*$PROJECT_DIR\(.*\)/\1/p"`
-/usr/bin/expect<<-EOF
-set time 1
-spawn scp -r $filepath $SERVICE_USER@$SERVICE_IP:$SERVICE_DIR/$DISCREPANCY_PATH
-expect {
-"*yes/no" { send "yes\r"; exp_continue }
-"*password:" { send "$SERVICE_PASSWORD\r" }
-}
-interact
-expect eof
-EOF
+
+scp -r $filepath $SERVICE_USER@$SERVICE_IP:$SERVICE_DIR/$DISCREPANCY_PATH
+
 echo "Done"
 }
 
@@ -56,16 +47,7 @@ for filename in `svn st | sed -n 's/^M\s*\(.*\)/\1/p'`;
 do
 filepath=$CURRENT_PATH/$filename
 DISCREPANCY_PATH=`echo $filepath | sed -n "s/^.*$PROJECT_DIR\(.*\)/\1/p"`
-/usr/bin/expect<<-EOF
-set time 1
-spawn scp -r $filepath $SERVICE_USER@$SERVICE_IP:$SERVICE_DIR/$DISCREPANCY_PATH
-expect {
-"*yes/no" { send "yes\r"; exp_continue }
-"*password:" { send "$SERVICE_PASSWORD\r" }
-}
-interact
-expect eof
-EOF
+scp -r $filepath $SERVICE_USER@$SERVICE_IP:$SERVICE_DIR/$DISCREPANCY_PATH
 done
 echo "ALL done"
 }
