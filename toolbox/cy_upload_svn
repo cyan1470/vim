@@ -1,0 +1,55 @@
+#!/bin/sh
+SERVICE_IP=10.128.178.56
+SERVICE_USER=linux3
+SERVICE_DIR=/home/linux3/jrd/cyan/
+
+if [ -z "$1" ]; then
+    echo "pls specify the director"
+    exit 1
+fi
+
+if [ ! -d "$1" ]; then 
+    echo "$1 is not a director"
+    exit 1
+fi
+
+TARGET=`basename $1`
+DOT="." 
+
+cd "$1"
+if [ "$DOT" = "$TARGET" ]; then
+    TARGET=`basename $PWD`
+fi
+
+if ! svn info | grep URL > /dev/null
+then
+    exit 1
+fi
+
+SYNC_TARGET=`svn info | grep "Working Copy Root Path" | awk -F "/" '{print $NF}'`
+echo $SYNC_TARGET
+
+if ! ssh $SERVICE_USER@$SERVICE_IP "cd $SERVICE_DIR;test -d $SYNC_TARGET"
+then
+    echo "$SERVICE_USER@$SERVICE_IP do not have such dir"
+    exit 1
+fi
+
+CURRENT_PATH=$PWD
+
+for filename in `svn st | sed -n 's/^M\s*\(.*\)/\1/p'`;
+do
+    sourcePath=$CURRENT_PATH/$filename
+    targetPath=`echo $sourcePath | sed -n "s@.*$SYNC_TARGET/\(.*\)@$SERVICE_DIR$SYNC_TARGET/\1@p"`
+    echo $targetPath
+
+    if ! scp -r $sourcePath $SERVICE_USER@$SERVICE_IP:$targetPath
+    then
+        echo "scp encounter some error"
+        exit 1
+    fi
+    echo " "
+done
+
+echo "ALL done"
+

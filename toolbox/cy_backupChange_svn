@@ -1,0 +1,37 @@
+#!/bin/sh
+if [ -z "$1" ]; then
+    echo "pls specify the director"
+    exit 1
+fi
+
+if [ ! -d "$1" ]; then 
+    echo "$1 is not a director"
+    exit 1
+fi
+
+BASENAME=`basename $1`
+DOT="." 
+
+DEST=$PWD 
+cd "$1"
+
+if ! svn info | grep URL > /dev/null
+then
+exit 1
+fi
+
+if [ "$DOT" = "$BASENAME" ]; then
+    BASENAME=`basename $PWD`
+fi
+
+TARNAME="$BASENAME"_mod_$(date +%Y%m%d)
+echo "Target object will create in $DEST,object name is $TARNAME"
+
+mkdir -v -p `svn st | sed -n "s@^M\s*\(.*/.*/\).*@$DEST/$TARNAME/\1@p" | sort -u`
+cp -v --parents `svn st | sed -n 's@^M\s*\(.*\)@\1@p'` $DEST/$TARNAME/
+if [ "$?" -eq 0 ]; then
+    echo "ALL DONE"
+else
+    echo "Error : cannot copy files"
+fi
+
